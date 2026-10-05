@@ -1,0 +1,42 @@
+module module_name_tb;
+
+    // 1. Declare inputs as reg, outputs as wire
+    reg  ... inputs;
+    wire ... outputs;
+
+    integer fails = 0;
+
+    // 2. Instantiate the DUT
+    module_name dut (...);
+
+    // 3. Create a reusable check task
+    task check(input ..., expected);
+        begin
+            // Apply inputs
+            ...
+            #1;
+
+            // Compare actual vs expected
+            if (output !== expected) begin
+                $display("FAIL ...");
+                fails = fails + 1;
+            end
+            else
+                $display("PASS ...");
+        end
+    endtask
+
+    // 4. Run test cases
+    initial begin
+        $dumpfile("build/module_name.vcd");
+        $dumpvars(0, module_name_tb);
+
+        check(...);
+        check(...);
+        check(...);
+
+        $display("%0d failures", fails);
+        $finish;
+    end
+
+endmodule
