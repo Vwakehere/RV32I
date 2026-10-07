@@ -3,7 +3,9 @@ input [2:0] funct3,
 input [6:0] funct7,
 output reg[3:0] alu_op,
 output reg[1:0] alu_src_a, wb_sel,
-output reg alu_src_b,reg_write,mem_read,mem_write,branch,jal,jalr
+output reg alu_src_b,reg_write,mem_read,mem_write,branch,jal,jalr,
+output reg [1:0] mem_size,// tells the memory how much data the instruction wants(byte,word,half word),
+output reg mem_unsigned // unsigned or signed (if data less than a word(sign extension ke liye))
 );
 
 /*
@@ -82,6 +84,8 @@ always @(*) begin
         branch     = 1'b0;
         jal        = 1'b0;
         jalr       = 1'b0;
+        mem_size=2'b10;
+        mem_unsigned=1'b0;
 
         case(opcode) 
 
@@ -129,22 +133,30 @@ always @(*) begin
 
            // load instructions
             LOAD: begin
-                alu_op    = ADD;
-                alu_src_a = 2'd0;   // rs1
-                alu_src_b = 1'b1;   // immediate
-                reg_write = 1'b1; // load requires register write
-                mem_read  = 1'b1; // read memory to store data in reg
-                wb_sel    = 2'd1;   // write back memory data into reg
-            end
+    alu_op=ADD; alu_src_a=2'd0; alu_src_b=1'b1; reg_write=1'b1;
+    mem_read=1'b1; wb_sel=2'd1;
 
+    case(funct3)
+        3'b000: begin mem_size=2'b00; mem_unsigned=1'b0; end // lb
+        3'b001: begin mem_size=2'b01; mem_unsigned=1'b0; end // lh
+        3'b010: begin mem_size=2'b10; mem_unsigned=1'b0; end // lw
+        3'b100: begin mem_size=2'b00; mem_unsigned=1'b1; end // lbu
+        3'b101: begin mem_size=2'b01; mem_unsigned=1'b1; end // lhu
+        default: begin mem_size=2'b10; mem_unsigned=1'b0; end
+    endcase
+end
 
             // store instruction
-            STORE: begin
-                alu_op    = ADD;
-                alu_src_a = 2'd0;   // rs1
-                alu_src_b = 1'b1;   // immediate
-                mem_write = 1'b1; // have to write on memory
-            end
+           STORE: begin
+    alu_op=ADD; alu_src_a=2'd0; alu_src_b=1'b1; mem_write=1'b1;
+
+    case(funct3)
+        3'b000: mem_size=2'b00; // sb
+        3'b001: mem_size=2'b01; // sh
+        3'b010: mem_size=2'b10; // sw
+        default: mem_size=2'b10;
+    endcase
+end
 
 
             // branch
